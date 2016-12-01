@@ -56,16 +56,40 @@ unsigned char* AES::encrypt(unsigned char* plaintext)
         for(int j = 0; j < 4; j++)
             state[i][j] = plaintext[4*j + i];
 
+    printf("\nPlaintext:\t");
+	print(plaintext);
+    printf("Key:\t\t");
+	print(key);
     KeyExpansion(key,w);
+    printf("Expanded key:\n");
+	for(int i = 0; i < 11; i++)
+    {
+        printf("\t\t");
+        print(w[i]);
+    }
+
     AddRoundKey(state,w[0]);
+    printf("\nAddRoundKey:\t");
+    print(state);
 
     for(int i = 1; i <= 10; i++)
     {
+        printf("\nN = %d\n", i);
         ByteSub(state);
+        printf("SubBytes:\t");
+        print(state);
         ShiftRow(state);
+        printf("ShiftRows:\t");
+        print(state);
         if(i != 10)
+        {
             MixColumn(state);
+            printf("MixColumns:\t");
+            print(state);
+        }
         AddRoundKey(state,w[i]);
+        printf("AddRoundKey:\t");
+        print(state);
     }
 
     for(int i = 0; i < 4; i++)
@@ -73,6 +97,9 @@ unsigned char* AES::encrypt(unsigned char* plaintext)
         {
             plaintext[j*4 + i] = state[i][j];
         }
+
+    printf("\nCiphertext:\t");
+	print(plaintext);
 
     return plaintext;
 }
@@ -84,24 +111,57 @@ unsigned char* AES::decrypt(unsigned char* ciphertext)
         for(int j = 0; j < 4; j++)
             state[i][j] = ciphertext[i + j*4];
 
+    printf("\nCiphertex:\t");
+    print(ciphertext);
+    printf("Key:\t\t");
+    print(w[10]);
+
     KeyExpansion(key,w);
     for(int i = 1; i < 10; i++)
-        InvMixColumn((w[i]));
+        InvMixColumn(w[i]);
+    printf("Expanded key:\n");
+    for(int i = 0; i < 11; i++)
+    {
+        printf("\t\t");
+        print(w[i]);
+    }
 
     AddRoundKey(state,w[10]);
+    printf("\nAddRoundKey:\t");
+    print(state);
 
     for(int i = 9; i >= 0; i--)
     {
+        printf("\nN = %d\n", i + 1);
+
         InvByteSub(state);
+        printf("InvSubBytes:\t");
+        print(state);
+
         InvShiftRow(state);
+        printf("InvShiftRows:\t");
+        print(state);
+
         if(i != 0)
+        {
             InvMixColumn(state);
+            printf("InvMixColumn:\t");
+            print(state);
+        }
+
         AddRoundKey(state,w[i]);
+        printf("AddRoundKey:\t");
+        print(state);
+
+
     }
 
     for(int i = 0; i < 4; i++)
         for(int j = 0; j < 4; j++)
             ciphertext[j*4 + i] = state[i][j];
+
+    printf("\nPlaintext:\t");
+	print(ciphertext);
 
     return ciphertext;
 }
@@ -166,7 +226,6 @@ void AES::InvShiftRow(unsigned char state[][4])
         for(int j = 0; j < 4; j++)
             state[i][j] = t[j];
     }
-
 }
 
 void AES::InvMixColumn(unsigned char state[][4])
@@ -243,47 +302,52 @@ unsigned char AES::FFmul(unsigned char a, unsigned char b)
     return res;
 }
 
-void print(unsigned char* state);
+void AES::print(unsigned char* state)
+{
+	for(int i = 0; i < 16; i++)
+	{
+		printf("%s%X ", state[i] > 15 ? "" : "0", state[i]);
+	}
+	printf("\n");
+}
+
+void AES::print(unsigned char state[][4])
+{
+    for(int i = 0; i < 4; i++)
+    {
+        for(int j = 0; j < 4; j++)
+        {
+            printf("%s%X ", state[j][i] > 15 ? "" : "0", state[j][i]);
+        }
+
+    }
+    printf("\n");
+}
 
 int main(int argc, char* argv[])
 {
-	unsigned char input[] =
+	unsigned char input[] =                         // 0001000101a198afda78173486153566
 	{
-		0x32, 0x43, 0xf6, 0xa8,
-		0x88, 0x5a, 0x30, 0x8d,
-		0x31, 0x31, 0x98, 0xa2,
-		0xe0, 0x37, 0x07, 0x34
+		0x00, 0x01, 0x00, 0x01,
+		0x01, 0xa1, 0x98, 0xaf,
+		0xda, 0x78, 0x17, 0x34,
+		0x86, 0x15, 0x35, 0x66
 	};
-	unsigned char key[] =
+	unsigned char key[] =                           // 00012001710198aeda79171460153594
 	{
-		0x2b, 0x7e, 0x15, 0x16,
-		0x28, 0xae, 0xd2, 0xa6,
-		0xab, 0xf7, 0x15, 0x88,
-		0x09, 0xcf, 0x4f, 0x3c
+		0x00, 0x01, 0x20, 0x01,
+		0x71, 0x01, 0x98, 0xae,
+		0xda, 0x79, 0x17, 0x14,
+		0x60, 0x15, 0x35, 0x94
 	};
+
 	AES aes(key);
 
-	printf("Input:\n");
-	print(input);
-
+	printf("1.Encryption\n");
 	aes.encrypt(input);
-	printf("After Cipher:\n");
-	print(input);
-
+    printf("\n\n2.Decryption\n");
 	aes.decrypt(input);
-	printf("After InvCipher:\n");
-	print(input);
 
     system("pause");
 	return 0;
-}
-
-void print(unsigned char* state)
-{
-	int i;
-	for(i=0; i<16; i++)
-	{
-		printf("%s%X ",state[i]>15 ? "" : "0", state[i]);
-	}
-	printf("\n");
 }
